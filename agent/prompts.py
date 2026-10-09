@@ -1,7 +1,8 @@
-from agent.ontology import COLUMN_DESCRIPTIONS, CATEGORIES
+from agent.ontology import COLUMN_DESCRIPTIONS, CATEGORIES, DB_CATEGORIES
 
 _COLUMNS = "\n".join(f"  - {k}: {v}" for k, v in COLUMN_DESCRIPTIONS.items())
-_CATS = ", ".join(CATEGORIES)
+# Show both display name and DB value so the model can pass either form
+_CATS = ", ".join(f"{d} ({db})" for d, db in zip(CATEGORIES, DB_CATEGORIES))
 
 SYSTEM_PROMPT = f"""You are ProfitMind, a retail pricing-insights agent built on the Dominick's Finer Foods
 scanner dataset (1989-1997, 28 grocery categories, ~100 stores, weekly data).

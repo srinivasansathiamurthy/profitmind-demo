@@ -2,19 +2,30 @@ import functools
 import json
 
 from langchain_core.tools import tool as _lc_tool
-from agent.ontology import CATEGORIES
+from agent.ontology import CATEGORIES, DB_CATEGORIES, DISPLAY_TO_DB
 
-_CATEGORY_MAP = {c.lower(): c for c in CATEGORIES}
+# Maps every reasonable input form → DB value (lowercase snake_case)
+# Covers: display name, DB name, lowercase display, partial matches
+_TO_DB: dict[str, str] = {}
+for _display, _db in DISPLAY_TO_DB.items():
+    _TO_DB[_display.lower()] = _db          # "soft drinks" → "soft_drinks"
+    _TO_DB[_db] = _db                        # "soft_drinks" → "soft_drinks"
+    _TO_DB[_display.lower().replace(" ", "")] = _db  # "softdrinks" → "soft_drinks"
 
 
 def _normalize_category(val: str) -> str | None:
-    """Return canonical category name, '' (all categories), or None (unrecognized)."""
+    """
+    Return the DB-format category value (lowercase snake_case), '' for all categories,
+    or None if unrecognized. Accepts display names, DB names, and common variations.
+    """
     if not val:
         return ""
-    lower = val.strip().lower()
-    if lower in _CATEGORY_MAP:
-        return _CATEGORY_MAP[lower]
-    matches = [c for k, c in _CATEGORY_MAP.items() if lower in k or k in lower]
+    key = val.strip().lower().replace("-", "_")
+    if key in _TO_DB:
+        return _TO_DB[key]
+    # Substring fallback: "cheese" matches "cheeses", "frozen juice" matches "frozen_juices"
+    key_nospace = key.replace(" ", "_").replace("-", "_")
+    matches = [db for db in DB_CATEGORIES if key_nospace in db or db in key_nospace]
     return matches[0] if len(matches) == 1 else None
 
 
@@ -52,9 +63,9 @@ def _deterministic_errors(tool_name: str, params: dict) -> list[str]:
 
 def _normalize_inputs(params: dict) -> dict:
     if params.get("category"):
-        canon = _normalize_category(params["category"])
-        if canon is not None:
-            params = {**params, "category": canon}
+        db_val = _normalize_category(params["category"])
+        if db_val is not None:
+            params = {**params, "category": db_val}
     return params
 
 

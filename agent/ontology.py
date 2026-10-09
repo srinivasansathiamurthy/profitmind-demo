@@ -36,6 +36,7 @@ COLUMN_DESCRIPTIONS = {
     "nitem": "numeric item code (UPC stub) — primary item identifier",
 }
 
+# Human-readable display names (used in system prompt)
 CATEGORIES = [
     "Analgesics", "Bath Soap", "Bathroom Tissues", "Beer", "Bottled Juices",
     "Canned Soup", "Canned Tuna", "Cereals", "Cheeses", "Cigarettes",
@@ -45,6 +46,12 @@ CATEGORIES = [
     "Shampoos", "Snack Crackers", "Soaps", "Soft Drinks", "Toothbrushes",
     "Toothpastes",
 ]
+
+# Actual values stored in dominicks.gold.movement — lowercase snake_case
+DB_CATEGORIES = [c.lower().replace(" ", "_").replace("-", "_") for c in CATEGORIES]
+
+# Display name → DB value, e.g. "Soft Drinks" → "soft_drinks"
+DISPLAY_TO_DB: dict[str, str] = dict(zip(CATEGORIES, DB_CATEGORIES))
 
 MIN_WEEKS_FOR_ELASTICITY = 52
 MIN_CORR_FOR_CLASSIFICATION = 0.3
