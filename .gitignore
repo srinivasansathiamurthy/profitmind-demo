@@ -1,0 +1,8 @@
+.env
+data/
+*.csv
+*.parquet
+*.sas7bdat
+*.json.gz
+.DS_Store
+__pycache__/
