@@ -90,6 +90,7 @@ def run_agent(question: str) -> str:
 
     started = datetime.now(timezone.utc).isoformat()
     final_answer_parts: list[str] = []
+    _announced_tool_ids: set[str] = set()  # track tool calls already announced
 
     for chunk, metadata in agent.stream(
         {"messages": [HumanMessage(content=question)]},
@@ -97,6 +98,15 @@ def run_agent(question: str) -> str:
         stream_mode="messages",
     ):
         if metadata.get("langgraph_node") == "model":
+            # Announce each tool call the moment its name arrives in the stream,
+            # before the (potentially large) args finish generating.
+            for tc in getattr(chunk, "tool_call_chunks", []):
+                call_id = tc.get("id") or ""
+                name = tc.get("name") or ""
+                if call_id and name and call_id not in _announced_tool_ids:
+                    _announced_tool_ids.add(call_id)
+                    print(f"\n  → {name} (preparing...)", file=sys.stderr, flush=True)
+
             text = _stream_text(chunk)
             if text:
                 print(text, end="", flush=True)

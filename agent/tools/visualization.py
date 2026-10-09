@@ -10,8 +10,12 @@ _VIZ_DIR = Path(__file__).resolve().parent.parent.parent / "workflows" / "viz"
 _VIZ_DIR.mkdir(parents=True, exist_ok=True)
 
 
+_MAX_VIZ_ROWS = 100  # prevent the model from embedding huge JSONs in tool calls
+
 def _load_df(data_json: str) -> pd.DataFrame:
     records = json.loads(data_json)
+    if len(records) > _MAX_VIZ_ROWS:
+        records = records[:_MAX_VIZ_ROWS]
     return pd.DataFrame(records)
 
 
