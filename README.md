@@ -142,12 +142,62 @@ The Databricks host is pre-filled. To find your HTTP path: Databricks workspace 
 ### Run
 
 ```bash
-python -m agent.agent "Which beer items are most inelastic?"
-python -m agent.agent "What are the top revenue categories?"
-python -m agent.agent "Forecast demand for item 1234567890 over 12 weeks"
+python -m agent.agent "<your question>"
 ```
 
-Each run prints the answer and saves a trace to `workflows/traces/<timestamp>.json`.
+Output streams token-by-token to stdout. Tool calls are announced to stderr as they fire. Every run saves a trace to `workflows/traces/<timestamp>.json`.
+
+---
+
+## Demo
+
+Three prompts that show the range of what the agent can do.
+
+### 1. Capability discovery
+
+```
+python -m agent.agent "look at your list of tools that you can call. what types of questions can you answer?"
+```
+
+The agent inspects its own tool definitions and explains what it can do — price distribution, elasticity estimation, causal inference, demand forecasting, what-if scenarios, and visualization — grounded in what the tools actually support rather than a generic description.
+
+---
+
+### 2. Price variation analysis
+
+```
+python -m agent.agent "How much do prices vary for Cheeses across stores and weeks?"
+```
+
+Calls `get_price_distribution` and `get_item_data`, then visualizes the spread. Sample output:
+
+| Statistic | Value |
+|---|---|
+| Min unit price | $0.05 |
+| Median | $2.25 |
+| Mean | $2.41 |
+| Max | $111.33 |
+| **Coefficient of Variation** | **0.47** |
+
+CV of 0.47 across 564 SKUs and 93 stores — driven by promotional pricing, bundle sizes, and store-level variation. High enough CV to make elasticity estimation reliable.
+
+---
+
+### 3. Elasticity classification
+
+```
+python -m agent.agent "Label all Beer items as elastic or inelastic."
+```
+
+Calls `classify_elasticity` (OLS log-log, |corr| ≥ 0.3 filter, ≥ 52 weeks), then plots the distribution. Sample output across 265 qualifying Beer items:
+
+| Class | Count | Share |
+|---|---|---|
+| Elastic (e < −1) | 253 | 95.5% |
+| Other (positive elasticity) | 12 | 4.5% |
+| Inelastic (−1 ≤ e < 0) | 0 | 0% |
+
+Beer is overwhelmingly price-elastic. The least sensitive items — Labatt's Blue (−1.04), Budweiser (−1.44) — sit just past the elastic threshold. Twelve premium/import items (Corona, Anchor Steam, Zima) show anomalous positive elasticity, consistent with Veblen-good or promotion-confound effects.
 
 ---
 
